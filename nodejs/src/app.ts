@@ -13,6 +13,9 @@ import mysql, { RowDataPacket } from "mysql2/promise";
 import qs from "qs";
 import "newrelic";
 import fs from "fs";
+import util from "util";
+
+const writeFileAsync = util.promisify(fs.writeFile)
 
 interface Config extends RowDataPacket {
   name: string;
@@ -453,7 +456,7 @@ app.post(
           : await readFile(defaultIconFilePath);
 
         await db.beginTransaction();
-        // fs.writeFile(path.join(iconDirPath, `${jiaIsuUUID}`), image)
+        await writeFileAsync(path.join(iconDirPath, `${jiaIsuUUID}`), image)
 
         try {
           await db.query(
