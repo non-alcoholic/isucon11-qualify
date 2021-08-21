@@ -11,6 +11,7 @@ import morgan from "morgan";
 import multer, { MulterError } from "multer";
 import mysql, { RowDataPacket } from "mysql2/promise";
 import qs from "qs";
+// import "newrelic";
 
 interface Config extends RowDataPacket {
   name: string;
@@ -450,7 +451,6 @@ app.post(
           : await readFile(defaultIconFilePath);
 
         await db.beginTransaction();
-
         try {
           await db.query(
             "INSERT INTO `isu` (`jia_isu_uuid`, `name`, `image`, `jia_user_id`) VALUES (?, ?, ?, ?)",
@@ -568,6 +568,8 @@ app.get(
   }
 );
 
+const imageMap = new Map<string,Buffer>()
+
 // GET /api/isu/:jia_isu_uuid/icon
 // ISUのアイコンを取得
 app.get(
@@ -587,6 +589,13 @@ app.get(
       }
 
       const jiaIsuUUID = req.params.jia_isu_uuid;
+
+      const key = jiaUserId + "_" + jiaIsuUUID
+      const image = imageMap.get(key)
+      if (image) {
+        return res.status(200).send(image);
+      }
+
       const [[row]] = await db.query<(RowDataPacket & { image: Buffer })[]>(
         "SELECT `image` FROM `isu` WHERE `jia_user_id` = ? AND `jia_isu_uuid` = ?",
         [jiaUserId, jiaIsuUUID]
@@ -594,6 +603,7 @@ app.get(
       if (!row) {
         return res.status(404).type("text").send("not found: isu");
       }
+      imageMap.set(key, row.image)
       return res.status(200).send(row.image);
     } catch (err) {
       console.error(`db error: ${err}`);
