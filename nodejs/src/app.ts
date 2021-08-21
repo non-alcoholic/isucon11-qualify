@@ -14,6 +14,10 @@ import multer, { MulterError } from "multer";
 import mysql, { RowDataPacket } from "mysql2/promise";
 import qs from "qs";
 import "newrelic";
+import fs from "fs";
+import util from "util";
+
+const writeFileAsync = util.promisify(fs.writeFile)
 
 interface Config extends RowDataPacket {
   name: string;
@@ -112,6 +116,7 @@ const sessionName = "isucondition_nodejs";
 const conditionLimit = 20;
 const frontendContentsPath = "../public";
 const jiaJWTSigningKeyPath = "../ec256-public.pem";
+const iconDirPath = "~/icons";
 const defaultIconFilePath = "../NoImage.jpg";
 const defaultJIAServiceUrl = "http://localhost:5000";
 const mysqlErrNumDuplicateEntry = 1062;
@@ -453,6 +458,7 @@ app.post(
           : await readFile(defaultIconFilePath);
 
         await db.beginTransaction();
+        await writeFileAsync(path.join(iconDirPath, `${jiaIsuUUID}`), image)
 
         try {
           await db.query(
