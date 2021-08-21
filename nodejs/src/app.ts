@@ -147,7 +147,7 @@ app.use(
   session({
     secret: process.env["SESSION_KEY"] ?? "isucondition",
     name: sessionName,
-    maxAge: 60 * 60 * 24 * 1000 * 30,
+    maxAge: 60 * 60 * 24 * 1000 * 365,
   })
 );
 app.set("cert", readFileSync(jiaJWTSigningKeyPath));
