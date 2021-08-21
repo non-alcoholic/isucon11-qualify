@@ -32,6 +32,7 @@
     "jsonwebtoken": "^8.5.1",
     "morgan": "^1.10.0",
     "multer": "^1.4.3",
-    "mysql2": "^2.3.0"
+    "mysql2": "^2.3.0",
+    "newrelic": "^8.1.0"
   }
 }
