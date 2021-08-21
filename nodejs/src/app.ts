@@ -941,7 +941,7 @@ app.get(
         if (err instanceof ErrorWithStatus && err.status === 401) {
           return res.status(401).type("text").send("you are not signed in");
         }
-        console.error(err);
+        // console.error(err);
         return res.status(500).send();
       }
 
@@ -987,7 +987,7 @@ app.get(
         );
       res.status(200).json(conditionResponse);
     } catch (err) {
-      console.error(`db error: ${err}`);
+      // console.error(`db error: ${err}`);
       return res.status(500).send();
     } finally {
       db.release();
@@ -1111,7 +1111,7 @@ app.get("/api/trend", async (req, res) => {
             isuLastCondition
           );
           if (err) {
-            console.error(err);
+            // console.error(err);
             return res.status(500).send();
           }
           const trendCondition: TrendCondition = {
@@ -1145,7 +1145,7 @@ app.get("/api/trend", async (req, res) => {
 
     return res.status(200).json(trendResponse);
   } catch (err) {
-    console.error(`db error: ${err}`);
+    // console.error(`db error: ${err}`);
     return res.status(500).send();
   } finally {
     db.release();
@@ -1190,7 +1190,7 @@ app.post(
     // TODO: 一定割合リクエストを落としてしのぐようにしたが、本来は全量さばけるようにすべき
     const dropProbability = 0.9;
     if (Math.random() <= dropProbability) {
-      console.warn("drop post isu condition request");
+      // console.warn("drop post isu condition request");
       return res.status(202).send();
     }
 
@@ -1253,7 +1253,7 @@ app.post(
 
       return res.status(202).send();
     } catch (err) {
-      console.error(`db error: ${err}`);
+      // console.error(`db error: ${err}`);
       await db.rollback();
       return res.status(500).send();
     } finally {
@@ -1315,7 +1315,7 @@ if (cluster.isPrimary) {
   }
 
   cluster.on('exit', function(worker/* , code, signal */) {
-    console.log('worker ' + worker.process.pid + ' died');
+    // console.log('worker ' + worker.process.pid + ' died');
   });
 } else {
   app.listen(parseInt(process.env["SERVER_APP_PORT"] ?? "3000", 10));
