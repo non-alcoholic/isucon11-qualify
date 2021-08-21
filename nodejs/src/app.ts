@@ -331,7 +331,8 @@ app.post("/api/auth", async (req, res) => {
     req.session.jia_user_id = jiaUserId;
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    req.session.save(console.log)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    req.session.save(() => {})
 
     return res.status(200).send();
   } catch (err) {
@@ -357,7 +358,8 @@ app.post("/api/signout", async (req, res) => {
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    req.session.destroy(console.log)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    req.session.destroy(() => {})
     return res.status(200).send();
   } finally {
     db.release();
