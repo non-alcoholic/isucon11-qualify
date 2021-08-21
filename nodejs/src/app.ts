@@ -499,6 +499,8 @@ app.post(
             "INSERT INTO `isu` (`jia_isu_uuid`, `name`, `image`, `jia_user_id`) VALUES (?, ?, ?, ?)",
             [jiaIsuUUID, isuName, image, jiaUserId]
           );
+          const key = jiaUserId + "_" + jiaIsuUUID
+          imageMap.set(key, image)
         } catch (err) {
           await db.rollback();
           if (err.errno === mysqlErrNumDuplicateEntry) {
