@@ -331,7 +331,8 @@ app.post("/api/auth", async (req, res) => {
     req.session.jia_user_id = jiaUserId;
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    req.session.save(console.log)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    req.session.save(() => {})
 
     return res.status(200).send();
   } catch (err) {
@@ -357,7 +358,8 @@ app.post("/api/signout", async (req, res) => {
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    req.session.destroy(console.log)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    req.session.destroy(() => {})
     return res.status(200).send();
   } finally {
     db.release();
@@ -629,7 +631,7 @@ app.get(
       const key = jiaUserId + "_" + jiaIsuUUID
       const image = imageMap.get(key)
       if (image) {
-        return res.status(200).send(image);
+        return res.status(200).header("cache-control", "public, max-age=31536000").send(image);
       }
 
       const [[row]] = await db.query<(RowDataPacket & { image: Buffer })[]>(
@@ -640,7 +642,7 @@ app.get(
         return res.status(404).type("text").send("not found: isu");
       }
       imageMap.set(key, row.image)
-      return res.status(200).send(row.image);
+      return res.status(200).header("cache-control", "public, max-age=31536000").send(row.image);
     } catch (err) {
       return res.status(500).send();
     } finally {
