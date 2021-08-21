@@ -11,7 +11,11 @@ import morgan from "morgan";
 import multer, { MulterError } from "multer";
 import mysql, { RowDataPacket } from "mysql2/promise";
 import qs from "qs";
-import "newrelic";
+// import "newrelic";
+// import fs from "fs";
+// import util from "util";
+
+// const writeFileAsync = util.promisify(fs.writeFile)
 
 const imageMap = new Map<string, {
   jiaIsuUUID: string,
@@ -117,6 +121,7 @@ const sessionName = "isucondition_nodejs";
 const conditionLimit = 20;
 const frontendContentsPath = "../public";
 const jiaJWTSigningKeyPath = "../ec256-public.pem";
+// const iconDirPath = path.join(__dirname, "..", "..", "..", "icons")
 const defaultIconFilePath = "../NoImage.jpg";
 const defaultJIAServiceUrl = "http://localhost:5000";
 const mysqlErrNumDuplicateEntry = 1062;
