@@ -6,13 +6,15 @@ import path from "path";
 import cluster from 'cluster'
 import os from 'os'
 import axios from "axios";
-import session from "cookie-session";
+import * as session from "express-session";
 import express from "express";
 import jwt from "jsonwebtoken";
 import morgan from "morgan";
 import multer, { MulterError } from "multer";
 import mysql, { RowDataPacket } from "mysql2/promise";
 import qs from "qs";
+import mysqlSession from 'express-mysql-session'
+const MySqlStore = mysqlSession(session)
 // import "newrelic";
 
 interface Config extends RowDataPacket {
@@ -148,11 +150,20 @@ const app = express();
 app.use(morgan("combined"));
 app.use("/assets", express.static(frontendContentsPath + "/assets"));
 app.use(express.json());
+
+const options = {
+  host: dbinfo.host,
+  port: 3306,
+  user: dbinfo.user,
+  password: dbinfo.password,
+  database: dbinfo.database
+}
 app.use(
-  session({
+  session.default({
     secret: process.env["SESSION_KEY"] ?? "isucondition",
     name: sessionName,
-    maxAge: 60 * 60 * 24 * 1000 * 365,
+    cookie: { maxAge: 60 * 60 * 24 * 1000 * 30 },
+    store: new MySqlStore(options)
   })
 );
 app.set("cert", readFileSync(jiaJWTSigningKeyPath));
@@ -306,6 +317,8 @@ app.post("/api/auth", async (req, res) => {
     await db.query("INSERT IGNORE INTO user (`jia_user_id`) VALUES (?)", [
       jiaUserId,
     ]);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     req.session = { jia_user_id: jiaUserId };
 
     return res.status(200).send();
@@ -332,6 +345,8 @@ app.post("/api/signout", async (req, res) => {
       return res.status(500).send();
     }
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     req.session = null;
     return res.status(200).send();
   } finally {
