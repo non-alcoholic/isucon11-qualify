@@ -993,14 +993,14 @@ async function getIsuConditions(
           "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?" +
             "	AND `timestamp` < ?" +
             "	ORDER BY `timestamp` DESC",
-          [jiaIsuUUID, endTime, limit]
+          [jiaIsuUUID, endTime]
         )
       : await db.query<IsuCondition[]>(
           "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?" +
             "	AND `timestamp` < ?" +
             "	AND ? <= `timestamp`" +
             "	ORDER BY `timestamp` DESC",
-          [jiaIsuUUID, endTime, startTime, limit]
+          [jiaIsuUUID, endTime, startTime]
         );
 
   let conditionsResponse: GetIsuConditionResponse[] = [];
