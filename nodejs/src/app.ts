@@ -3,8 +3,6 @@ import { readFileSync } from "fs";
 import { readFile } from "fs/promises";
 import path from "path";
 
-import cluster from 'cluster'
-import os from 'os'
 import axios from "axios";
 import session from "cookie-session";
 import express from "express";
@@ -1235,16 +1233,4 @@ function isValidConditionFormat(condition: string): boolean {
   });
 });
 
-const cpuLength = os.cpus().length
-
-if (cluster.isPrimary) {
-  for (let i = 0; i < cpuLength; i++) {
-    cluster.fork();
-  }
-
-  cluster.on('exit', function(worker/* , code, signal */) {
-    console.log('worker ' + worker.process.pid + ' died');
-  });
-} else {
-  app.listen(parseInt(process.env["SERVER_APP_PORT"] ?? "3000", 10));
-}
+app.listen(parseInt(process.env["SERVER_APP_PORT"] ?? "3000", 10));
