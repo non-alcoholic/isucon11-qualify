@@ -260,7 +260,7 @@ app.post(
 
       for (const [id, is_dirty, is_overweight, is_broken] of valueList) {
         await db.query(
-            "UPDATE `isu_condition` SET `is_dirty` = ? `is_overweight` = ? `is_broken` = ? WHERE id = ?",
+            "UPDATE `isu_condition` SET `is_dirty` = ?, `is_overweight` = ?, `is_broken` = ? WHERE id = ?",
             [is_dirty, is_overweight, is_broken, id]
         );
       }
