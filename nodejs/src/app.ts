@@ -156,7 +156,8 @@ const options = {
   port: 3306,
   user: dbinfo.user,
   password: dbinfo.password,
-  database: dbinfo.database
+  database: dbinfo.database,
+  connectionLimit: 10,
 }
 app.use(
   session.default({
