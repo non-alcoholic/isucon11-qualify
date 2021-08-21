@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS `isu_association_config`;
 DROP TABLE IF EXISTS `isu_condition`;
 DROP TABLE IF EXISTS `isu`;
 DROP TABLE IF EXISTS `user`;
+DELETE FROM `sessions`;
 
 CREATE TABLE `isu` (
   `id` bigint AUTO_INCREMENT,

@@ -737,6 +737,10 @@ async function generateIsuGraphResponse(
   let timestampsInThisHour = [];
   let startTimeInThisHour = new Date(0);
 
+  // const [rows] = await db.query<IsuCondition[]>(
+  //   "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY `timestamp` ASC",
+  //   [jiaIsuUUID]
+  // );
   const endTime = new Date(graphDate.getTime() + 24 * 3600 * 1000);
   const [rows] = await db.query<IsuCondition[]>(
     "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? AND timestamp >= ? AND timestamp < ? ORDER BY `timestamp` ASC",
@@ -779,6 +783,22 @@ async function generateIsuGraphResponse(
     });
   }
 
+  let startIndex = dataPoints.length;
+  let endNextIndex = dataPoints.length;
+  dataPoints.forEach((graph, i) => {
+    if (startIndex === dataPoints.length && graph.startAt >= graphDate) {
+      startIndex = i;
+    }
+    if (endNextIndex === dataPoints.length && graph.startAt > endTime) {
+      endNextIndex = i;
+    }
+  });
+
+  const filteredDataPoints: GraphDataPointWithInfo[] = [];
+  if (startIndex < endNextIndex) {
+    filteredDataPoints.push(...dataPoints.slice(startIndex, endNextIndex));
+  }
+
   const responseList: GraphResponse[] = [];
   let index = 0;
   let thisTime = graphDate;
@@ -787,8 +807,8 @@ async function generateIsuGraphResponse(
     let data = undefined;
     const timestamps: number[] = [];
 
-    if (index < dataPoints.length) {
-      const dataWithInfo = dataPoints[index];
+    if (index < filteredDataPoints.length) {
+      const dataWithInfo = filteredDataPoints[index];
       if (dataWithInfo.startAt.getTime() === thisTime.getTime()) {
         data = dataWithInfo.data;
         timestamps.push(...dataWithInfo.conditionTimeStamps);
@@ -826,28 +846,15 @@ function calculateGraphDataPoint(
       return [{}, new Error("invalid condition format")];
     }
 
-    if (condition.is_broken) {
-      conditionsCount['is_broken'] += 1;
-      badConditionsCount++;
-    }
-    if (condition.is_dirty) {
-      conditionsCount['is_dirty'] += 1;
-      badConditionsCount++;
-    }
-    if (condition.is_overweight) {
-      conditionsCount['is_overweight'] += 1;
-      badConditionsCount++;
-    }
+    condition.condition.split(",").forEach((condStr) => {
+      const keyValue = condStr.split("=");
 
-    // condition.condition.split(",").forEach((condStr) => {
-    //   const keyValue = condStr.split("=");
-
-    //   const conditionName = keyValue[0];
-    //   if (keyValue[1] === "true") {
-    //     conditionsCount[conditionName] += 1;
-    //     badConditionsCount++;
-    //   }
-    // });
+      const conditionName = keyValue[0];
+      if (keyValue[1] === "true") {
+        conditionsCount[conditionName] += 1;
+        badConditionsCount++;
+      }
+    });
 
     if (badConditionsCount >= 3) {
       rawScore += scoreConditionLevelCritical;
@@ -989,18 +996,18 @@ async function getIsuConditions(
       ? await db.query<IsuCondition[]>(
           "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?" +
             "	AND `timestamp` < ?" +
-            "	ORDER BY `timestamp` DESC LIMIT ?",
-          [jiaIsuUUID, endTime, limit]
+            "	ORDER BY `timestamp` DESC",
+          [jiaIsuUUID, endTime]
         )
       : await db.query<IsuCondition[]>(
           "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?" +
             "	AND `timestamp` < ?" +
             "	AND ? <= `timestamp`" +
-            "	ORDER BY `timestamp` DESC LIMIT ?",
-          [jiaIsuUUID, endTime, startTime, limit]
+            "	ORDER BY `timestamp` DESC",
+          [jiaIsuUUID, endTime, startTime]
         );
 
-  const conditionsResponse: GetIsuConditionResponse[] = [];
+  let conditionsResponse: GetIsuConditionResponse[] = [];
   conditions.forEach((condition) => {
     const [cLevel, err] = calculateConditionLevel(condition);
     if (err) {
@@ -1018,6 +1025,10 @@ async function getIsuConditions(
       });
     }
   });
+
+   if (conditionsResponse.length > limit) {
+    conditionsResponse = conditionsResponse.slice(0, limit);
+  }
 
   return conditionsResponse;
 }
