@@ -456,8 +456,11 @@ app.post(
           : await readFile(defaultIconFilePath);
 
         await db.beginTransaction();
-        await writeFileAsync(path.join(iconDirPath, `${jiaIsuUUID}`), image)
-
+        try {
+          await writeFileAsync(path.join(iconDirPath, `${jiaIsuUUID}`), image)
+        } catch (e) {
+          console.log(e)
+        }
         try {
           await db.query(
             "INSERT INTO `isu` (`jia_isu_uuid`, `name`, `image`, `jia_user_id`) VALUES (?, ?, ?, ?)",
