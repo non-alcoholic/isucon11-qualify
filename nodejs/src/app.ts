@@ -301,7 +301,7 @@ app.post("/api/auth", async (req, res) => {
     ]);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    req.session = { jia_user_id: jiaUserId };
+    req.session.jia_user_id = jiaUserId;
 
     return res.status(200).send();
   } catch (err) {
@@ -329,7 +329,7 @@ app.post("/api/signout", async (req, res) => {
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    req.session = null;
+    req.session.destroy(console.log)
     return res.status(200).send();
   } finally {
     db.release();
