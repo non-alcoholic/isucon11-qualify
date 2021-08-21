@@ -1080,11 +1080,17 @@ app.get("/api/trend", async (req, res) => {
 
     const trendResponse: TrendResponse[] = [];
 
+    const [isuAll] = await db.query<Isu[]>(
+        "SELECT * FROM `isu`", []
+    );
+
     for (const character of characterList) {
-      const [isuList] = await db.query<Isu[]>(
-        "SELECT * FROM `isu` WHERE `character` = ?",
-        [character.character]
-      );
+      const isuList = isuAll.filter((isu) => isu.character === character.character)
+
+      // const [isuList] = await db.query<Isu[]>(
+      //   "SELECT * FROM `isu` WHERE `character` = ?",
+      //   [character.character]
+      // );
 
       const characterInfoIsuConditions = [];
       const characterWarningIsuConditions = [];
