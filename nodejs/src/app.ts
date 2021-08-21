@@ -629,7 +629,7 @@ app.get(
       const key = jiaUserId + "_" + jiaIsuUUID
       const image = imageMap.get(key)
       if (image) {
-        return res.status(200).send(image);
+        return res.status(200).header("cache-control", "public, max-age=31536000").send(image);
       }
 
       const [[row]] = await db.query<(RowDataPacket & { image: Buffer })[]>(
@@ -640,7 +640,7 @@ app.get(
         return res.status(404).type("text").send("not found: isu");
       }
       imageMap.set(key, row.image)
-      return res.status(200).send(row.image);
+      return res.status(200).header("cache-control", "public, max-age=31536000").send(row.image);
     } catch (err) {
       return res.status(500).send();
     } finally {
