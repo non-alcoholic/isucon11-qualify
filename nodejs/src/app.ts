@@ -1148,6 +1148,12 @@ app.post(
         return res.status(400).type("text").send("bad request body");
       }
 
+      const allValid = request.every((cond) => isValidConditionFormat(cond.condition))
+
+      if (!allValid) {
+        return res.status(400).type("text").send("bad request body");
+      }
+
       await db.beginTransaction();
 
       const [[{ cnt }]] = await db.query<(RowDataPacket & { cnt: number })[]>(
@@ -1159,21 +1165,33 @@ app.post(
         return res.status(404).type("text").send("not found: isu");
       }
 
-      for (const cond of request) {
+      const valuesList = request.map((cond) => {
         const timestamp = new Date(cond.timestamp * 1000);
+        return [jiaIsuUUID, timestamp, cond.is_sitting, cond.condition, cond.message]
+      })
 
-        if (!isValidConditionFormat(cond.condition)) {
-          await db.rollback();
-          return res.status(400).type("text").send("bad request body");
-        }
+      const sql = "INSERT INTO `isu_condition`" +
+      "	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)" +
+      "	VALUES " + "(?, ?, ?, ?, ?), ".repeat(valuesList.length).slice( 0, -2 )
+      const values = valuesList.flat(1)
 
-        await db.query(
-          "INSERT INTO `isu_condition`" +
-            "	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)" +
-            "	VALUES (?, ?, ?, ?, ?)",
-          [jiaIsuUUID, timestamp, cond.is_sitting, cond.condition, cond.message]
-        );
-      }
+      await db.query(sql, values);
+
+      // for (const cond of request) {
+      //   const timestamp = new Date(cond.timestamp * 1000);
+      //
+      //   if (!isValidConditionFormat(cond.condition)) {
+      //     await db.rollback();
+      //     return res.status(400).type("text").send("bad request body");
+      //   }
+      //
+      //   await db.query(
+      //     "INSERT INTO `isu_condition`" +
+      //       "	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)" +
+      //       "	VALUES (?, ?, ?, ?, ?)",
+      //     [jiaIsuUUID, timestamp, cond.is_sitting, cond.condition, cond.message]
+      //   );
+      // }
 
       await db.commit();
 
