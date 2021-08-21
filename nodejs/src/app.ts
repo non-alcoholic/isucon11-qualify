@@ -164,7 +164,8 @@ app.use(
     secret: process.env["SESSION_KEY"] ?? "isucondition",
     name: sessionName,
     cookie: { maxAge: 60 * 60 * 24 * 1000 * 30 },
-    store: new MySqlStore(options)
+    store: new MySqlStore(options),
+    saveUninitialized: false,
   })
 );
 app.set("cert", readFileSync(jiaJWTSigningKeyPath));
@@ -321,6 +322,9 @@ app.post("/api/auth", async (req, res) => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     req.session.jia_user_id = jiaUserId;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    req.session.save(console.log)
 
     return res.status(200).send();
   } catch (err) {
