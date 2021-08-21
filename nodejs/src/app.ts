@@ -1296,7 +1296,9 @@ function isValidConditionFormat(condition: string): boolean {
   "/register",
 ].forEach((frontendPath) => {
   app.get(frontendPath, (_req, res) => {
-    res.sendFile(path.resolve("../public", "index.html"));
+    res.sendFile(path.resolve("../public", "index.html"), {
+      maxAge: 60 * 60 * 24 * 1000 * 365
+    });
   });
 });
 
