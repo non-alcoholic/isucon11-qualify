@@ -11,7 +11,7 @@ import morgan from "morgan";
 import multer, { MulterError } from "multer";
 import mysql, { RowDataPacket } from "mysql2/promise";
 import qs from "qs";
-// import "newrelic";
+import "newrelic";
 // import fs from "fs";
 // import util from "util";
 
