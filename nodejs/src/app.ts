@@ -15,7 +15,7 @@ import mysql, { RowDataPacket } from "mysql2/promise";
 import qs from "qs";
 import mysqlSession from 'express-mysql-session'
 const MySqlStore = mysqlSession(session)
-// import "newrelic";
+import "newrelic";
 
 interface Config extends RowDataPacket {
   name: string;
