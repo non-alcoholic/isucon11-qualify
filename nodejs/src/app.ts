@@ -797,22 +797,6 @@ async function generateIsuGraphResponse(
     });
   }
 
-  let startIndex = dataPoints.length;
-  let endNextIndex = dataPoints.length;
-  dataPoints.forEach((graph, i) => {
-    if (startIndex === dataPoints.length && graph.startAt >= graphDate) {
-      startIndex = i;
-    }
-    if (endNextIndex === dataPoints.length && graph.startAt > endTime) {
-      endNextIndex = i;
-    }
-  });
-
-  const filteredDataPoints: GraphDataPointWithInfo[] = [];
-  if (startIndex < endNextIndex) {
-    filteredDataPoints.push(...dataPoints.slice(startIndex, endNextIndex));
-  }
-
   const responseList: GraphResponse[] = [];
   let index = 0;
   let thisTime = graphDate;
@@ -821,8 +805,8 @@ async function generateIsuGraphResponse(
     let data = undefined;
     const timestamps: number[] = [];
 
-    if (index < filteredDataPoints.length) {
-      const dataWithInfo = filteredDataPoints[index];
+    if (index < dataPoints.length) {
+      const dataWithInfo = dataPoints[index];
       if (dataWithInfo.startAt.getTime() === thisTime.getTime()) {
         data = dataWithInfo.data;
         timestamps.push(...dataWithInfo.conditionTimeStamps);
@@ -1023,18 +1007,18 @@ async function getIsuConditions(
       ? await db.query<IsuCondition[]>(
           "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?" +
             "	AND `timestamp` < ?" +
-            "	ORDER BY `timestamp` DESC",
-          [jiaIsuUUID, endTime]
+            "	ORDER BY `timestamp` DESC LIMIT ?",
+          [jiaIsuUUID, endTime, limit]
         )
       : await db.query<IsuCondition[]>(
           "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?" +
             "	AND `timestamp` < ?" +
             "	AND ? <= `timestamp`" +
-            "	ORDER BY `timestamp` DESC",
-          [jiaIsuUUID, endTime, startTime]
+            "	ORDER BY `timestamp` DESC LIMIT ?",
+          [jiaIsuUUID, endTime, startTime, limit]
         );
 
-  let conditionsResponse: GetIsuConditionResponse[] = [];
+  const conditionsResponse: GetIsuConditionResponse[] = [];
   conditions.forEach((condition) => {
     const [cLevel, err] = calculateConditionLevel(condition);
     if (err) {
@@ -1052,10 +1036,6 @@ async function getIsuConditions(
       });
     }
   });
-
-  if (conditionsResponse.length > limit) {
-    conditionsResponse = conditionsResponse.slice(0, limit);
-  }
 
   return conditionsResponse;
 }
