@@ -47,6 +47,9 @@ interface IsuCondition extends RowDataPacket {
   jia_isu_uuid: string;
   timestamp: Date;
   is_sitting: number;
+  is_dirty: boolean;
+  is_overweight: number;
+  is_broken: number;
   condition: string;
   message: string;
   created_at: Date;
@@ -244,6 +247,24 @@ app.post(
 
     const db = await pool.getConnection();
     try {
+
+      const [isuConditions] = await db.query<IsuCondition[]>("SELECT `id`, `condition` FROM `isu_condition`")
+
+      const valueList = isuConditions.map((isuCondition) => {
+        const [is_dirty,is_overweight, is_broken] = isuCondition.condition.split(",")
+        const _is_dirty = is_dirty === "is_dirty=true"
+        const _is_overweight = is_overweight === "is_overweight=true"
+        const _is_broken = is_broken === "is_broken=true"
+        return [isuCondition.id, _is_dirty, _is_overweight, _is_broken]
+      })
+
+      for (const [id, is_dirty, is_overweight, is_broken] of valueList) {
+        await db.query(
+            "UPDATE `isu_condition` SET `is_dirty` = ? `is_overweight` = ? `is_broken` = ? WHERE id = ?",
+            [is_dirty, is_overweight, is_broken, id]
+        );
+      }
+
       await db.query(
         "INSERT INTO `isu_association_config` (`name`, `url`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `url` = VALUES(`url`)",
         ["jia_service_url", request.jia_service_url]
@@ -376,7 +397,7 @@ app.get("/api/isu", async (req, res) => {
       let formattedCondition = undefined;
       if (foundLastCondition) {
         const [conditionLevel, err] = calculateConditionLevel(
-          lastCondition.condition
+          lastCondition
         );
         if (err) {
           console.error(err);
@@ -970,7 +991,7 @@ async function getIsuConditions(
 
   let conditionsResponse: GetIsuConditionResponse[] = [];
   conditions.forEach((condition) => {
-    const [cLevel, err] = calculateConditionLevel(condition.condition);
+    const [cLevel, err] = calculateConditionLevel(condition);
     if (err) {
       return;
     }
@@ -995,20 +1016,20 @@ async function getIsuConditions(
 }
 
 // ISUのコンディションの文字列からコンディションレベルを計算
-function calculateConditionLevel(condition: string): [string, Error?] {
+function calculateConditionLevel(condition: IsuCondition): [string, Error?] {
   let conditionLevel: string;
-  const warnCount = (() => {
-    let count = 0;
-    let pos = 0;
-    while (pos !== -1) {
-      pos = condition.indexOf("=true", pos);
-      if (pos >= 0) {
-        count += 1;
-        pos += 5;
-      }
-    }
-    return count;
-  })();
+  let warnCount = 0
+  if (condition.is_dirty) {
+    warnCount++
+  }
+
+  if (condition.is_overweight) {
+    warnCount++
+  }
+
+  if (condition.is_broken) {
+    warnCount++
+  }
   switch (warnCount) {
     case 0:
       conditionLevel = conditionLevelInfo;
@@ -1055,7 +1076,7 @@ app.get("/api/trend", async (req, res) => {
         if (conditions.length > 0) {
           const isuLastCondition = conditions[0];
           const [conditionLevel, err] = calculateConditionLevel(
-            isuLastCondition.condition
+            isuLastCondition
           );
           if (err) {
             console.error(err);
@@ -1169,12 +1190,13 @@ app.post(
 
       const valuesList = request.map((cond) => {
         const timestamp = new Date(cond.timestamp * 1000);
-        return [jiaIsuUUID, timestamp, cond.is_sitting, cond.condition, cond.message]
+        const [is_dirty,is_overweight, is_broken ] = cond.condition.split(",")
+        return [jiaIsuUUID, timestamp, cond.is_sitting, cond.condition,   is_dirty === "is_dirty=true", is_overweight === "is_overweight=true", is_broken === "is_broken=true", cond.message]
       })
 
       const sql = "INSERT INTO `isu_condition`" +
-      "	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)" +
-      "	VALUES " + "(?, ?, ?, ?, ?), ".repeat(valuesList.length).slice( 0, -2 )
+      "	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `is_dirty`, `is_overweight`, `is_broken`, `message`)" +
+      "	VALUES " + "(?, ?, ?, ?, ?, ?, ?, ?), ".repeat(valuesList.length).slice( 0, -2 )
       const values = valuesList.flat(1)
 
       await db.query(sql, values);
