@@ -779,6 +779,22 @@ async function generateIsuGraphResponse(
     });
   }
 
+  let startIndex = dataPoints.length;
+  let endNextIndex = dataPoints.length;
+  dataPoints.forEach((graph, i) => {
+    if (startIndex === dataPoints.length && graph.startAt >= graphDate) {
+      startIndex = i;
+    }
+    if (endNextIndex === dataPoints.length && graph.startAt > endTime) {
+      endNextIndex = i;
+    }
+  });
+
+  const filteredDataPoints: GraphDataPointWithInfo[] = [];
+  if (startIndex < endNextIndex) {
+    filteredDataPoints.push(...dataPoints.slice(startIndex, endNextIndex));
+  }
+
   const responseList: GraphResponse[] = [];
   let index = 0;
   let thisTime = graphDate;
@@ -787,8 +803,8 @@ async function generateIsuGraphResponse(
     let data = undefined;
     const timestamps: number[] = [];
 
-    if (index < dataPoints.length) {
-      const dataWithInfo = dataPoints[index];
+    if (index < filteredDataPoints.length) {
+      const dataWithInfo = filteredDataPoints[index];
       if (dataWithInfo.startAt.getTime() === thisTime.getTime()) {
         data = dataWithInfo.data;
         timestamps.push(...dataWithInfo.conditionTimeStamps);
