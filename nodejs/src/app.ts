@@ -207,15 +207,25 @@ async function getUserIdFromSession(
   return jiaUserId;
 }
 
+let configCache:string|null = null
+
 async function getJIAServiceUrl(db: mysql.Connection): Promise<string> {
+  if (configCache) {
+    return configCache
+  }
+
   const [[config]] = await db.query<Config[]>(
     "SELECT * FROM `isu_association_config` WHERE `name` = ?",
     ["jia_service_url"]
   );
-  if (!config) {
-    return defaultJIAServiceUrl;
-  }
-  return config.url;
+
+  configCache = config ? config.url : defaultJIAServiceUrl
+  return configCache
+
+  // if (!config) {
+  //   return defaultJIAServiceUrl;
+  // }
+  // return config.url;
 }
 
 interface PostInitializeRequest {
