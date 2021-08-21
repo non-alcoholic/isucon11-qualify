@@ -116,7 +116,8 @@ const sessionName = "isucondition_nodejs";
 const conditionLimit = 20;
 const frontendContentsPath = "../public";
 const jiaJWTSigningKeyPath = "../ec256-public.pem";
-const iconDirPath = "~/icons";
+const iconDirPath = path.join(__dirname, "..", "..", "..", "icons")
+console.log(iconDirPath)
 const defaultIconFilePath = "../NoImage.jpg";
 const defaultJIAServiceUrl = "http://localhost:5000";
 const mysqlErrNumDuplicateEntry = 1062;
@@ -458,8 +459,11 @@ app.post(
           : await readFile(defaultIconFilePath);
 
         await db.beginTransaction();
-        await writeFileAsync(path.join(iconDirPath, `${jiaIsuUUID}`), image)
-
+        try {
+          await writeFileAsync(path.join(iconDirPath, `${jiaIsuUUID}`), image)
+        } catch (e) {
+          console.log(e)
+        }
         try {
           await db.query(
             "INSERT INTO `isu` (`jia_isu_uuid`, `name`, `image`, `jia_user_id`) VALUES (?, ?, ?, ?)",
