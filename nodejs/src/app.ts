@@ -128,7 +128,6 @@ const scoreConditionLevelWarning = 2;
 const scoreConditionLevelCritical = 1;
 
 if (!("POST_ISUCONDITION_TARGET_BASE_URL" in process.env)) {
-  console.error("missing: POST_ISUCONDITION_TARGET_BASE_URL");
   process.exit(1);
 }
 const postIsuConditionTargetBaseURL =
@@ -264,7 +263,6 @@ app.post(
         });
       });
     } catch (err) {
-      console.error(`exec init.sh error: ${err}`);
       return res.status(500).send();
     }
 
@@ -293,7 +291,6 @@ app.post(
         ["jia_service_url", request.jia_service_url]
       );
     } catch (err) {
-      console.error(`db error: ${err}`);
       return res.status(500).send();
     } finally {
       db.release();
@@ -338,7 +335,6 @@ app.post("/api/auth", async (req, res) => {
 
     return res.status(200).send();
   } catch (err) {
-    console.error(`db error: ${err}`);
     return res.status(500).send();
   } finally {
     db.release();
@@ -356,7 +352,6 @@ app.post("/api/signout", async (req, res) => {
       if (err instanceof ErrorWithStatus && err.status === 401) {
         return res.status(401).type("text").send("you are not signed in");
       }
-      console.error(err);
       return res.status(500).send();
     }
 
@@ -381,7 +376,6 @@ app.get("/api/user/me", async (req, res) => {
       if (err instanceof ErrorWithStatus && err.status === 401) {
         return res.status(401).type("text").send("you are not signed in");
       }
-      console.error(err);
       return res.status(500).send();
     }
 
@@ -404,7 +398,6 @@ app.get("/api/isu", async (req, res) => {
       if (err instanceof ErrorWithStatus && err.status === 401) {
         return res.status(401).type("text").send("you are not signed in");
       }
-      console.error(err);
       return res.status(500).send();
     }
 
@@ -430,7 +423,6 @@ app.get("/api/isu", async (req, res) => {
           lastCondition
         );
         if (err) {
-          console.error(err);
           await db.rollback();
           return res.status(500).send();
         }
@@ -457,7 +449,6 @@ app.get("/api/isu", async (req, res) => {
 
     return res.status(200).json(responseList);
   } catch (err) {
-    console.error(`db error: ${err}`);
     await db.rollback();
     return res.status(500).send();
   } finally {
@@ -488,7 +479,6 @@ app.post(
           if (err instanceof ErrorWithStatus && err.status === 401) {
             return res.status(401).type("text").send("you are not signed in");
           }
-          console.error(err);
           return res.status(500).send();
         }
 
@@ -516,7 +506,6 @@ app.post(
           if (err.errno === mysqlErrNumDuplicateEntry) {
             return res.status(409).type("text").send("duplicated: isu");
           } else {
-            console.error(`db error: ${err}`);
             return res.status(500).send();
           }
         }
@@ -536,9 +525,6 @@ app.post(
             }
           );
           if (response.status !== 202) {
-            console.error(
-              `JIAService returned error: status code ${response.status}, message: ${response.data}`
-            );
             await db.rollback();
             return res
               .status(response.status)
@@ -547,7 +533,6 @@ app.post(
           }
           isuFromJIA = response.data;
         } catch (err) {
-          console.error(`failed to request to JIAService: ${err}`);
           await db.rollback();
           return res.status(500).send();
         }
@@ -571,7 +556,6 @@ app.post(
         };
         return res.status(201).send(isuResponse);
       } catch (err) {
-        console.error(`db error: ${err}`);
         await db.rollback();
         return res.status(500).send();
       } finally {
@@ -595,7 +579,6 @@ app.get(
         if (err instanceof ErrorWithStatus && err.status === 401) {
           return res.status(401).type("text").send("you are not signed in");
         }
-        console.error(err);
         return res.status(500).send();
       }
 
@@ -615,7 +598,6 @@ app.get(
       };
       return res.status(200).json(isuResponse);
     } catch (err) {
-      console.error(`db error: ${err}`);
       return res.status(500).send();
     } finally {
       db.release();
@@ -639,7 +621,6 @@ app.get(
         if (err instanceof ErrorWithStatus && err.status === 401) {
           return res.status(401).type("text").send("you are not signed in");
         }
-        console.error(err);
         return res.status(500).send();
       }
 
@@ -661,7 +642,6 @@ app.get(
       imageMap.set(key, row.image)
       return res.status(200).send(row.image);
     } catch (err) {
-      console.error(`db error: ${err}`);
       return res.status(500).send();
     } finally {
       db.release();
@@ -695,7 +675,7 @@ app.get(
         if (err instanceof ErrorWithStatus && err.status === 401) {
           return res.status(401).type("text").send("you are not signed in");
         }
-        console.error(err);
+        // console.error(err);
         return res.status(500).send();
       }
 
@@ -727,7 +707,7 @@ app.get(
         date
       );
       if (e) {
-        console.error(e);
+        // console.error(e);
         await db.rollback();
         return res.status(500).send();
       }
@@ -736,7 +716,7 @@ app.get(
 
       return res.status(200).json(getIsuGraphResponse);
     } catch (err) {
-      console.error(`db error: ${err}`);
+      // console.error(`db error: ${err}`);
       await db.rollback();
       return res.status(500).send();
     } finally {
@@ -938,7 +918,7 @@ app.get(
         if (err instanceof ErrorWithStatus && err.status === 401) {
           return res.status(401).type("text").send("you are not signed in");
         }
-        console.error(err);
+        // // console.error(err);
         return res.status(500).send();
       }
 
@@ -984,7 +964,7 @@ app.get(
         );
       res.status(200).json(conditionResponse);
     } catch (err) {
-      console.error(`db error: ${err}`);
+      // // console.error(`db error: ${err}`);
       return res.status(500).send();
     } finally {
       db.release();
@@ -1104,7 +1084,7 @@ app.get("/api/trend", async (req, res) => {
             isuLastCondition
           );
           if (err) {
-            console.error(err);
+            // // console.error(err);
             return res.status(500).send();
           }
           const trendCondition: TrendCondition = {
@@ -1138,7 +1118,7 @@ app.get("/api/trend", async (req, res) => {
 
     return res.status(200).json(trendResponse);
   } catch (err) {
-    console.error(`db error: ${err}`);
+    // // console.error(`db error: ${err}`);
     return res.status(500).send();
   } finally {
     db.release();
@@ -1183,7 +1163,7 @@ app.post(
     // TODO: 一定割合リクエストを落としてしのぐようにしたが、本来は全量さばけるようにすべき
     const dropProbability = 0.9;
     if (Math.random() <= dropProbability) {
-      console.warn("drop post isu condition request");
+      // // console.warn("drop post isu condition request");
       return res.status(202).send();
     }
 
@@ -1246,7 +1226,7 @@ app.post(
 
       return res.status(202).send();
     } catch (err) {
-      console.error(`db error: ${err}`);
+      // // console.error(`db error: ${err}`);
       await db.rollback();
       return res.status(500).send();
     } finally {
@@ -1296,7 +1276,9 @@ function isValidConditionFormat(condition: string): boolean {
   "/register",
 ].forEach((frontendPath) => {
   app.get(frontendPath, (_req, res) => {
-    res.sendFile(path.resolve("../public", "index.html"));
+    res.sendFile(path.resolve("../public", "index.html"), {
+      maxAge: 60 * 60 * 24 * 1000 * 365
+    });
   });
 });
 
@@ -1307,8 +1289,7 @@ if (cluster.isPrimary) {
     cluster.fork();
   }
 
-  cluster.on('exit', function(worker/* , code, signal */) {
-    console.log('worker ' + worker.process.pid + ' died');
+  cluster.on('exit', () => {
   });
 } else {
   app.listen(parseInt(process.env["SERVER_APP_PORT"] ?? "3000", 10));
