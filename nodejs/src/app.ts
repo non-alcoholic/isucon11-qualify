@@ -45,9 +45,6 @@ interface IsuCondition extends RowDataPacket {
   jia_isu_uuid: string;
   timestamp: Date;
   is_sitting: number;
-  is_dirty: boolean;
-  is_overweight: number;
-  is_broken: number;
   condition: string;
   message: string;
   created_at: Date;
@@ -377,7 +374,7 @@ app.get("/api/isu", async (req, res) => {
       let formattedCondition = undefined;
       if (foundLastCondition) {
         const [conditionLevel, err] = calculateConditionLevel(
-          lastCondition
+          lastCondition.condition
         );
         if (err) {
           console.error(err);
@@ -971,7 +968,7 @@ async function getIsuConditions(
 
   let conditionsResponse: GetIsuConditionResponse[] = [];
   conditions.forEach((condition) => {
-    const [cLevel, err] = calculateConditionLevel(condition);
+    const [cLevel, err] = calculateConditionLevel(condition.condition);
     if (err) {
       return;
     }
@@ -996,33 +993,20 @@ async function getIsuConditions(
 }
 
 // ISUのコンディションの文字列からコンディションレベルを計算
-function calculateConditionLevel(condition: IsuCondition): [string, Error?] {
-  // const warnCount = (() => {
-  //   let count = 0;
-  //   let pos = 0;
-  //   while (pos !== -1) {
-  //     pos = condition.indexOf("=true", pos);
-  //     if (pos >= 0) {
-  //       count += 1;
-  //       pos += 5;
-  //     }
-  //   }
-  //   return count;
-  // })();
-  let warnCount = 0
-  if (condition.is_dirty) {
-    warnCount++
-  }
-
-  if (condition.is_overweight) {
-    warnCount++
-  }
-
-  if (condition.is_broken) {
-    warnCount++
-  }
-
+function calculateConditionLevel(condition: string): [string, Error?] {
   let conditionLevel: string;
+  const warnCount = (() => {
+    let count = 0;
+    let pos = 0;
+    while (pos !== -1) {
+      pos = condition.indexOf("=true", pos);
+      if (pos >= 0) {
+        count += 1;
+        pos += 5;
+      }
+    }
+    return count;
+  })();
   switch (warnCount) {
     case 0:
       conditionLevel = conditionLevelInfo;
@@ -1069,7 +1053,7 @@ app.get("/api/trend", async (req, res) => {
         if (conditions.length > 0) {
           const isuLastCondition = conditions[0];
           const [conditionLevel, err] = calculateConditionLevel(
-            isuLastCondition
+            isuLastCondition.condition
           );
           if (err) {
             console.error(err);
@@ -1183,30 +1167,12 @@ app.post(
           return res.status(400).type("text").send("bad request body");
         }
 
-        const [is_dirty,is_overweight, is_broken ] = cond.condition.split(",")
-
         await db.query(
-            "INSERT INTO `isu_condition`" +
-            "	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `is_dirty` `is_overweight` `is_broken` `message`)" +
+          "INSERT INTO `isu_condition`" +
+            "	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)" +
             "	VALUES (?, ?, ?, ?, ?)",
-            [
-              jiaIsuUUID,
-              timestamp,
-              cond.is_sitting,
-              cond.condition,
-              is_dirty === "is_dirty=true",
-              is_overweight === "is_overweight=true",
-              is_broken === "is_broken=true",
-              cond.message
-            ]
+          [jiaIsuUUID, timestamp, cond.is_sitting, cond.condition, cond.message]
         );
-
-        // await db.query(
-        //   "INSERT INTO `isu_condition`" +
-        //     "	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)" +
-        //     "	VALUES (?, ?, ?, ?, ?)",
-        //   [jiaIsuUUID, timestamp, cond.is_sitting, cond.condition, cond.message]
-        // );
       }
 
       await db.commit();
