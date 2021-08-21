@@ -17,13 +17,6 @@ import qs from "qs";
 
 // const writeFileAsync = util.promisify(fs.writeFile)
 
-const imageMap = new Map<string, {
-  jiaIsuUUID: string,
-  isuName: string,
-  image: Buffer,
-  jiaUserId: string
-}>()
-
 interface Config extends RowDataPacket {
   name: string;
   url: string;
@@ -462,27 +455,26 @@ app.post(
           ? req.file.buffer
           : await readFile(defaultIconFilePath);
 
-        imageMap.set(
-            jiaIsuUUID + "_" + jiaUserId,
-            {jiaIsuUUID, isuName, image, jiaUserId}
-        )
-
-        // await db.beginTransaction();
-        //
+        await db.beginTransaction();
         // try {
-        //   await db.query(
-        //     "INSERT INTO `isu` (`jia_isu_uuid`, `name`, `image`, `jia_user_id`) VALUES (?, ?, ?, ?)",
-        //     [jiaIsuUUID, isuName, image, jiaUserId]
-        //   );
-        // } catch (err) {
-        //   await db.rollback();
-        //   if (err.errno === mysqlErrNumDuplicateEntry) {
-        //     return res.status(409).type("text").send("duplicated: isu");
-        //   } else {
-        //     console.error(`db error: ${err}`);
-        //     return res.status(500).send();
-        //   }
+        //   await writeFileAsync(path.join(iconDirPath, `${jiaIsuUUID}`), image)
+        // } catch (e) {
+        //   console.log(e)
         // }
+        try {
+          await db.query(
+            "INSERT INTO `isu` (`jia_isu_uuid`, `name`, `image`, `jia_user_id`) VALUES (?, ?, ?, ?)",
+            [jiaIsuUUID, isuName, image, jiaUserId]
+          );
+        } catch (err) {
+          await db.rollback();
+          if (err.errno === mysqlErrNumDuplicateEntry) {
+            return res.status(409).type("text").send("duplicated: isu");
+          } else {
+            console.error(`db error: ${err}`);
+            return res.status(500).send();
+          }
+        }
 
         const targetUrl = (await getJIAServiceUrl(db)) + "/api/activate";
 
@@ -604,25 +596,15 @@ app.get(
         return res.status(500).send();
       }
 
-
       const jiaIsuUUID = req.params.jia_isu_uuid;
-      const image = imageMap.get(
-          jiaIsuUUID + "_" + jiaUserId,
-      )
-      if (!image) {
+      const [[row]] = await db.query<(RowDataPacket & { image: Buffer })[]>(
+        "SELECT `image` FROM `isu` WHERE `jia_user_id` = ? AND `jia_isu_uuid` = ?",
+        [jiaUserId, jiaIsuUUID]
+      );
+      if (!row) {
         return res.status(404).type("text").send("not found: isu");
       }
-      return res.status(200).send(image);
-
-      // const jiaIsuUUID = req.params.jia_isu_uuid;
-      // const [[row]] = await db.query<(RowDataPacket & { image: Buffer })[]>(
-      //   "SELECT `image` FROM `isu` WHERE `jia_user_id` = ? AND `jia_isu_uuid` = ?",
-      //   [jiaUserId, jiaIsuUUID]
-      // );
-      // if (!row) {
-      //   return res.status(404).type("text").send("not found: isu");
-      // }
-      // return res.status(200).send(row.image);
+      return res.status(200).send(row.image);
     } catch (err) {
       console.error(`db error: ${err}`);
       return res.status(500).send();
